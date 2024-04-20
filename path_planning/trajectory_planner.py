@@ -2,11 +2,13 @@ import rclpy
 from rclpy.node import Node
 import numpy as np
 import cv2
+import networkx as nx
 
 assert rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, PoseArray, Pose
 from nav_msgs.msg import OccupancyGrid
 from .utils import LineTrajectory
+
 
 
 class PathPlan(Node):
@@ -52,11 +54,13 @@ class PathPlan(Node):
 
         self.trajectory = LineTrajectory(node=self, viz_namespace="/planned_trajectory")
 
+        self.map_data = None
+        self.graph = None
 
 
     def map_cb(self, msg):
         '''
-        this should discretize the grid, lmk if it doesn't
+        This is called to make the discretized map and graph based on data that comes in.
         '''
         self.kernel_thickness = 10
         
@@ -72,6 +76,7 @@ class PathPlan(Node):
         end_result = np.where(thicker_lines_image > 0, 0, 100) #undoing the other transformation
 
         self.map_data = end_result
+        self.graph = self.create_graph(self.map_data, True)
 
 
 
@@ -94,6 +99,46 @@ class PathPlan(Node):
         path = self.planner.plan(self.map_data, start, goal) 
         self.publish_path(path)
         '''
+
+    
+
+    def create_graph(image, include_diagonals=False):
+        """
+        Create a graph from an image where each white pixel is connected to its
+        neighboring white pixels. Optionally include diagonal connections.
+        """
+        # Ensure the image is in binary format (i.e., only contains 0s and 255s)
+        # image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)[1]
+
+        # Initialize the graph
+        G = nx.Graph()
+        
+        # Get the dimensions of the image
+        rows, cols = image.shape
+        
+        # Define the directions for neighbors (8 directions if diagonals included, else 4)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+        if include_diagonals:
+            directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
+        
+        # Iterate over the image pixels
+        for x in range(rows):
+            for y in range(cols):
+                # Check if the current pixel is not an obstacle
+                if image[x, y] == 0:
+                    # Add the current pixel as a node to the graph
+                    G.add_node((x, y))
+                    # Check for white neighbors
+                    for dx, dy in directions:
+                        neighbor_x, neighbor_y = x + dx, y + dy
+                        # Check if the neighbor coordinates are inside the image bounds
+                        if 0 <= neighbor_x < rows and 0 <= neighbor_y < cols:
+                            # Check if the neighbor is not an obstacle
+                            if image[neighbor_x, neighbor_y] == 0:
+                                # Add the neighbor as a node and connect it to the current pixel
+                                G.add_node((neighbor_x, neighbor_y))
+                                G.add_edge((x, y), (neighbor_x, neighbor_y))
+        return G
 
 
 
