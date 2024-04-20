@@ -5,7 +5,7 @@ import cv2
 import networkx as nx
 
 assert rclpy
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, PoseArray, Pose
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, PoseArray, Pose, Quaternion
 from nav_msgs.msg import OccupancyGrid
 from .utils import LineTrajectory
 
@@ -56,37 +56,43 @@ class PathPlan(Node):
 
         self.map_data = None
         self.graph = None
+        self.map = None
 
 
     def map_cb(self, msg):
         '''
         This is called to make the discretized map and graph based on data that comes in.
         '''
+        self.map = msg
         self.kernel_thickness = 10
         
         data_from_occupancy_grid = np.reshape(msg.data, (msg.info.height, msg.info.width))
         data_from_occupancy_grid[data_from_occupancy_grid == -1] = 100  # Treat unknown as obstacles
 
-        binary_data = np.where(data_from_occupancy_grid > 50, 0, 1).astype(np.uint8) # this makes it easier to do dilate
+        binary_data = np.where(data_from_occupancy_grid > 50, 1, 0).astype(np.uint8) # this makes it easier to do dilate
 
         # Define the structural element for the morphological operations
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_thickness, self.kernel_thickness))
         thicker_lines_image = cv2.dilate(binary_data, kernel, iterations=1)
 
-        end_result = np.where(thicker_lines_image > 0, 0, 100) #undoing the other transformation
+        end_result = np.where(thicker_lines_image > 0, 100, 0) #undoing the other transformation
 
         self.map_data = end_result
         self.graph = self.create_graph(self.map_data, True)
+        self.get_logger().info('finished making graph')
+        
 
 
 
     def pose_cb(self, msg):
+        self.get_logger().info('got start.')
         # assuming we only care about x and y
         self.start_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y)
 
 
 
     def goal_cb(self, msg):
+        self.get_logger().info('got path.')
         if self.map_data is None:
             self.get_logger().warn('No map data available.')
             return
@@ -99,10 +105,21 @@ class PathPlan(Node):
         path = self.planner.plan(self.map_data, start, goal) 
         self.publish_path(path)
         '''
+        def dist(a, b):
+            (x1, y1) = a
+            (x2, y2) = b
+            return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+        try:
+            path = nx.astar_path(self.graph, start, goal, heuristic=dist)
+            self.get_logger().warn('path found')
+            print(path)
+            self.publish_path(path)
+        except Exception as e:
+            print(e)
 
     
 
-    def create_graph(image, include_diagonals=False):
+    def create_graph(self, image, include_diagonals=False):
         """
         Create a graph from an image where each white pixel is connected to its
         neighboring white pixels. Optionally include diagonal connections.
@@ -115,6 +132,10 @@ class PathPlan(Node):
         
         # Get the dimensions of the image
         rows, cols = image.shape
+        self.get_logger().info('rows')
+        self.get_logger().info(str(rows))
+        self.get_logger().info('cols')
+        self.get_logger().info(str(cols))
         
         # Define the directions for neighbors (8 directions if diagonals included, else 4)
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
@@ -122,19 +143,19 @@ class PathPlan(Node):
             directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
         
         # Iterate over the image pixels
-        for x in range(rows):
-            for y in range(cols):
+        for y in range(rows):
+            for x in range(cols):
                 # Check if the current pixel is not an obstacle
-                if image[x, y] == 0:
+                if image[y, x] == 0:
                     # Add the current pixel as a node to the graph
                     G.add_node((x, y))
                     # Check for white neighbors
                     for dx, dy in directions:
                         neighbor_x, neighbor_y = x + dx, y + dy
                         # Check if the neighbor coordinates are inside the image bounds
-                        if 0 <= neighbor_x < rows and 0 <= neighbor_y < cols:
+                        if 0 <= neighbor_y < rows and 0 <= neighbor_x < cols:
                             # Check if the neighbor is not an obstacle
-                            if image[neighbor_x, neighbor_y] == 0:
+                            if image[neighbor_y, neighbor_x] == 0:
                                 # Add the neighbor as a node and connect it to the current pixel
                                 G.add_node((neighbor_x, neighbor_y))
                                 G.add_edge((x, y), (neighbor_x, neighbor_y))
@@ -149,52 +170,53 @@ class PathPlan(Node):
         resolution = self.map.info.resolution
         origin_x = self.map.info.origin.position.x
         origin_y = self.map.info.origin.position.y
+        orientation = self.map.info.origin.orientation 
 
-        # Convert real-world coords to grid coords
-        grid_x = int((position[0] - origin_x) / resolution)
-        grid_y = int((position[1] - origin_y) / resolution)
+        real_coords = np.array([position[0], position[1]]) - np.array([origin_x, origin_y])
+        real_coords = np.append(real_coords, 0)
+        rotation_matrix = self.quaternion_to_rotation_matrix(orientation)
+        inverse_rotation_matrix = np.linalg.inv(rotation_matrix)
+        pixel_coords = np.dot(inverse_rotation_matrix, real_coords)
 
-        return (grid_x, grid_y)
+        u, v = pixel_coords[:2] / resolution
+
+        return (int(u), int(v))
+    
+    def quaternion_to_rotation_matrix(self, quaternion):
+        x, y, z, w = quaternion.x, quaternion.y, quaternion.z, quaternion.w
+        return np.array([
+            [1 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w],
+            [2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z, 2*y*z - 2*x*w],
+            [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y]
+        ])
 
 
 
     def publish_path(self, path):
-        # Create a new PoseArray message
-        pose_array = PoseArray()
-        pose_array.header.stamp = self.get_clock().now().to_msg()
-        pose_array.header.frame_id = "map"  # Ensure this matches the frame used in your environment
-
+        self.trajectory.clear()
         # Convert each path point to a Pose
         resolution = self.map.info.resolution
         origin_x = self.map.info.origin.position.x
         origin_y = self.map.info.origin.position.y
+        orientation = self.map.info.origin.orientation 
+        rotation_matrix = self.quaternion_to_rotation_matrix(orientation)
 
         for grid_pos in path:
-            pose = Pose()
             # Convert grid coordinates back to real-world coordinates
-            real_x = (grid_pos[0] * resolution) + origin_x
-            real_y = (grid_pos[1] * resolution) + origin_y
+            pixel_coords = np.array([grid_pos[0], grid_pos[1]]) * resolution
+            pixel_coords = np.append(pixel_coords, 0)
+            real_coords = np.dot(rotation_matrix, pixel_coords)
+            real_coords = real_coords[:2]
+            real_coords += np.array([origin_x, origin_y])
 
-            # Set the position
-            pose.position.x = real_x
-            pose.position.y = real_y
-            pose.position.z = 0  # Assuming flat terrain
-
-            # Default orientation (no rotation)
-            pose.orientation.x = 0
-            pose.orientation.y = 0
-            pose.orientation.z = 0
-            pose.orientation.w = 1
-
-            # Add pose to the array
-            pose_array.poses.append(pose)
+            self.trajectory.addPoint((real_coords[0], real_coords[1]))
 
         # Publish the PoseArray
-        self.traj_pub.publish(pose_array)
+        self.plan_path()
 
 
 
-    def plan_path(self, start_point, end_point, map):
+    def plan_path(self):
         self.traj_pub.publish(self.trajectory.toPoseArray())
         self.trajectory.publish_viz()
 
