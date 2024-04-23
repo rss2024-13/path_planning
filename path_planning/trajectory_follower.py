@@ -26,7 +26,7 @@ class PurePursuit(Node):
         self.drive_topic = self.get_parameter('drive_topic').get_parameter_value().string_value
 
         self.lookahead = 1  # FILL IN #
-        self.speed = 0.75  # FILL IN #
+        self.speed = 1.0  # FILL IN #
         self.wheelbase_length = 0.3302  # FILL IN #
         self.lfw_ratio = 1/4
         self.turn_radius = .1
@@ -46,6 +46,8 @@ class PurePursuit(Node):
                                                self.drive_topic,
                                                1)
         self.pp_pub = self.create_publisher(Marker, "/pp_marker", 1)
+        self.eta_pub = self.create_publisher(Marker, "/eta_marker", 1)
+        self.circle_pub = self.create_publisher(Marker, "/circle_marker", 1)
         
         self.traj_poses = None
         self.initialized_traj = False
@@ -85,26 +87,37 @@ class PurePursuit(Node):
 
                 # angle_to_cone = np.arctan2(pp[1] - y, pp[0] - x)
 
-                theta_pp = math.atan2(pp[1], pp[0])
+                theta_pp = math.atan2(pp[1]-x, pp[0]-y)
+                angle_sign = np.sign(-math.sin(theta) * (pp[0]-x) + math.cos(theta) *( pp[1] - y) )
 
                 dot = (pp[0] - x) * (math.cos(theta)) + (pp[1] - y) * (math.sin(theta))
                 mag_curr_pos = 1 #(x ** 2 + y ** 2) ** .5
                 mag_pp_pos = ((pp[0] - x) ** 2 + (pp[1] - y) ** 2) ** .5
 
-                eta = math.acos(dot / (mag_curr_pos * mag_pp_pos))
+                eta = angle_sign * math.acos(dot / (mag_curr_pos * mag_pp_pos))
+                
 
-                L1 = ((x - pp[0]) ** 2 + (x - pp[1]) ** 2) ** .5
+                self.mark_pt(self.eta_pub, (0.0, 1.0, 1.0), [(x, y), (x+math.cos(theta+eta), y+math.sin(theta+eta))])
+
+                l_1 = ((x - pp[0]) ** 2 + (y - pp[1]) ** 2) ** .5
                 L = self.wheelbase_length
-                self.turn_radius = L1 / (2 * math.sin(eta))
+                self.turn_radius = l_1 / (2 * math.sin(eta))
                 Lfw = (self.turn_radius ** 2 + self.wheelbase_length ** 2) ** .5
                 lfw = self.wheelbase_length * self.lfw_ratio
 
-                cmd = math.atan2((2 * self.wheelbase_length * math.sin(eta)), L1)
-                # cmd = -1 * math.atan2(L * math.sin(eta),  (Lfw/2 + lfw * math.cos(eta)))
-                self.get_logger().info(f"Command Value: {cmd} ")
-                self.get_logger().info(f"Command Value: {np.sign(math.sin(theta_pp - theta))} ")
+                R = l_1/(2*math.sin(eta))
+                ccx = x +  R * math.cos(theta- math.pi/2) # circle center x
+                ccy = y +  R * math.sin(theta- math.pi/2)
+                self.mark_pt(self.circle_pub, (1.0, 1.0, 0.0), [(ccx + R*math.cos(t), ccy+R*math.sin(t)) for t in np.linspace(0,2*math.pi, 32)])
 
-                drive_cmd.drive.steering_angle = np.sign(math.sin(theta_pp - theta)) * min(abs(cmd), self.max_steering_ang)
+
+                cmd = math.atan2((2 * self.wheelbase_length * math.sin(eta)), l_1)
+                # cmd = -1 * math.atan2(L * math.sin(eta),  (Lfw/2 + lfw * math.cos(eta)))
+                # self.get_logger().info(f"eta: {eta}")
+                # self.get_logger().info(f"CMD: {cmd}")
+                # self.get_logger().info(f"sign of sin(theta_pp - theta): {np.sign(math.sin(theta_pp - theta))} , sign of y_pp in robot frame: {np.sign(-math.sin(theta) * (pp[0]-x) + math.cos(theta) *( pp[1] - y) )}")
+
+                drive_cmd.drive.steering_angle = angle_sign * min(abs(cmd), self.max_steering_ang)
 
                 drive_cmd.drive.speed = self.speed
                 self.curr_steering_ang = drive_cmd.drive.steering_angle

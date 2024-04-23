@@ -64,7 +64,7 @@ class PathPlan(Node):
         This is called to make the discretized map and graph based on data that comes in.
         '''
         self.map = msg
-        self.kernel_thickness = 30
+        self.kernel_thickness = 20
         
         data_from_occupancy_grid = np.reshape(msg.data, (msg.info.height, msg.info.width))
         data_from_occupancy_grid[data_from_occupancy_grid == -1] = 100  # Treat unknown as obstacles
