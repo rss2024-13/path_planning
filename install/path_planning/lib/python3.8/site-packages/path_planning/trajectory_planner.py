@@ -2,13 +2,13 @@ import rclpy
 from rclpy.node import Node
 import numpy as np
 import cv2
-# import networkx as nx
+import networkx as nx
 
 assert rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, PoseArray, Pose, Quaternion
 from nav_msgs.msg import OccupancyGrid
 from .utils import LineTrajectory
-import heapq
+
 
 
 class PathPlan(Node):
@@ -64,7 +64,7 @@ class PathPlan(Node):
         This is called to make the discretized map and graph based on data that comes in.
         '''
         self.map = msg
-        self.kernel_thickness = 20
+        self.kernel_thickness = 10
         
         data_from_occupancy_grid = np.reshape(msg.data, (msg.info.height, msg.info.width))
         data_from_occupancy_grid[data_from_occupancy_grid == -1] = 100  # Treat unknown as obstacles
@@ -78,36 +78,10 @@ class PathPlan(Node):
         end_result = np.where(thicker_lines_image > 0, 100, 0) #undoing the other transformation
 
         self.map_data = end_result
-        # self.graph = self.create_graph(self.map_data, True)
+        self.graph = self.create_graph(self.map_data, True)
         self.get_logger().info('finished making graph')
         
-    def astar(self, start, goal, neighbors, heuristic):
-        open_list = [(0, start)]
-        came_from = {}
-        g_score = {start: 0}
-        f_score = {start: heuristic(start, goal)}
 
-        while open_list:
-            _, current = heapq.heappop(open_list)
-
-            if current == goal:
-                path = []
-                while current in came_from:
-                    path.append(current)
-                    current = came_from[current]
-                path.append(start)
-                path.reverse()
-                return path
-
-            for neighbor in neighbors(current):
-                tentative_g_score = g_score[current] + 1
-                if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
-                    came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g_score
-                    f_score[neighbor] = tentative_g_score + heuristic(neighbor, goal)
-                    heapq.heappush(open_list, (f_score[neighbor], neighbor))
-
-        return None
 
 
     def pose_cb(self, msg):
@@ -135,72 +109,57 @@ class PathPlan(Node):
             (x1, y1) = a
             (x2, y2) = b
             return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-        
-        include_diagonals = True
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
-        if include_diagonals:
-            directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
-
-        def neighbors(node):
-            neighbors = []
-            for direction in directions:
-                x_change, y_change = direction
-                new_node = (node[0] + x_change, node[1] + y_change)
-                if self.map_data[new_node[1], new_node[0]] == 0:
-                    neighbors.append(new_node)
-            return neighbors
-        
-        path = self.astar(start, goal, neighbors, dist)
-        if path is not None:
-            self.get_logger().info('found path.')
+        try:
+            path = nx.astar_path(self.graph, start, goal, heuristic=dist)
+            self.get_logger().warn('path found')
+            print(path)
             self.publish_path(path)
-        else:
-            self.get_logger().info('path not found')
-
+        except Exception as e:
+            print(e)
 
     
 
-    # def create_graph(self, image, include_diagonals=False):
-    #     """
-    #     Create a graph from an image where each white pixel is connected to its
-    #     neighboring white pixels. Optionally include diagonal connections.
-    #     """
-    #     # Ensure the image is in binary format (i.e., only contains 0s and 255s)
-    #     # image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)[1]
+    def create_graph(self, image, include_diagonals=False):
+        """
+        Create a graph from an image where each white pixel is connected to its
+        neighboring white pixels. Optionally include diagonal connections.
+        """
+        # Ensure the image is in binary format (i.e., only contains 0s and 255s)
+        # image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)[1]
 
-    #     # Initialize the graph
-    #     G = nx.Graph()
+        # Initialize the graph
+        G = nx.Graph()
         
-    #     # Get the dimensions of the image
-    #     rows, cols = image.shape
-    #     self.get_logger().info('rows')
-    #     self.get_logger().info(str(rows))
-    #     self.get_logger().info('cols')
-    #     self.get_logger().info(str(cols))
+        # Get the dimensions of the image
+        rows, cols = image.shape
+        self.get_logger().info('rows')
+        self.get_logger().info(str(rows))
+        self.get_logger().info('cols')
+        self.get_logger().info(str(cols))
         
-    #     # Define the directions for neighbors (8 directions if diagonals included, else 4)
-    #     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
-    #     if include_diagonals:
-    #         directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
+        # Define the directions for neighbors (8 directions if diagonals included, else 4)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+        if include_diagonals:
+            directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
         
-    #     # Iterate over the image pixels
-    #     for y in range(rows):
-    #         for x in range(cols):
-    #             # Check if the current pixel is not an obstacle
-    #             if image[y, x] == 0:
-    #                 # Add the current pixel as a node to the graph
-    #                 G.add_node((x, y))
-    #                 # Check for white neighbors
-    #                 for dx, dy in directions:
-    #                     neighbor_x, neighbor_y = x + dx, y + dy
-    #                     # Check if the neighbor coordinates are inside the image bounds
-    #                     if 0 <= neighbor_y < rows and 0 <= neighbor_x < cols:
-    #                         # Check if the neighbor is not an obstacle
-    #                         if image[neighbor_y, neighbor_x] == 0:
-    #                             # Add the neighbor as a node and connect it to the current pixel
-    #                             G.add_node((neighbor_x, neighbor_y))
-    #                             G.add_edge((x, y), (neighbor_x, neighbor_y))
-    #     return G
+        # Iterate over the image pixels
+        for y in range(rows):
+            for x in range(cols):
+                # Check if the current pixel is not an obstacle
+                if image[y, x] == 0:
+                    # Add the current pixel as a node to the graph
+                    G.add_node((x, y))
+                    # Check for white neighbors
+                    for dx, dy in directions:
+                        neighbor_x, neighbor_y = x + dx, y + dy
+                        # Check if the neighbor coordinates are inside the image bounds
+                        if 0 <= neighbor_y < rows and 0 <= neighbor_x < cols:
+                            # Check if the neighbor is not an obstacle
+                            if image[neighbor_y, neighbor_x] == 0:
+                                # Add the neighbor as a node and connect it to the current pixel
+                                G.add_node((neighbor_x, neighbor_y))
+                                G.add_edge((x, y), (neighbor_x, neighbor_y))
+        return G
 
 
 
