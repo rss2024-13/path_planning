@@ -5,8 +5,9 @@ import cv2
 # import networkx as nx
 
 assert rclpy
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, PoseArray, Pose, Quaternion
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, PoseArray, Pose, Quaternion, PointStamped
 from nav_msgs.msg import OccupancyGrid
+from std_msgs.msg import Float32
 from .utils import LineTrajectory
 import heapq
 
@@ -52,11 +53,30 @@ class PathPlan(Node):
             10
         )
 
+        self.point_sub = self.create_subscription(
+            PointStamped,
+            '/clicked_point',
+            self.point_cb,
+            10
+        )
+
+        self.goal_complete_sub = self.create_subscription(
+            Float32,
+            '/goal_complete',
+            self.goal_complete_cb,
+            10
+        )
+
+
         self.trajectory = LineTrajectory(node=self, viz_namespace="/planned_trajectory")
 
         self.map_data = None
         self.graph = None
         self.map = None
+
+        self.start = None
+        self.goal_queue = []
+
 
 
     def map_cb(self, msg):
@@ -110,10 +130,17 @@ class PathPlan(Node):
         return None
 
 
-    def pose_cb(self, msg):
+    def point_cb(self, msg): # CHANGE HERE #
+        self.get_logger().info('adding a new point to goal points')
+        point = self.map_to_grid((msg.point.x, msg.point.y))
+        self.goal_queue.append(point)
+
+
+    def pose_cb(self, msg): 
         self.get_logger().info('got start.')
         # assuming we only care about x and y
         self.start_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y)
+        
 
 
 
@@ -125,7 +152,27 @@ class PathPlan(Node):
 
         start = self.map_to_grid(self.start_pose)
         goal = self.map_to_grid((msg.pose.position.x, msg.pose.position.y))
+        self.goal_queue.append(goal)
 
+        self.start = start
+        self.plan_path_to_next_point()
+
+
+    def goal_complete_cb(self, msg):
+        if msg.data == 1.0:
+            self.plan_path_to_next_point()
+
+
+
+    def plan_path_to_next_point(self):
+        if len(self.goal_queue) > 0:
+            start = self.start
+            goal = self.goal_queue.pop(0)
+            self.plan_path(start, goal)
+
+
+
+    def plan_path(self, start, goal):
         '''
         # PLAN A PATH HERE #
         path = self.planner.plan(self.map_data, start, goal) 
@@ -156,7 +203,8 @@ class PathPlan(Node):
             self.publish_path(path)
         else:
             self.get_logger().info('path not found')
-
+        
+        self.start = goal # so that we plan from the goal to the next goal instead of start to next goal
 
     
 

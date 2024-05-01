@@ -5,6 +5,7 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped, PoseArray, Point
+from std_msgs.msg import Float32
 
 from .utils import LineTrajectory
 from typing import List, Tuple
@@ -45,6 +46,9 @@ class PurePursuit(Node):
         self.drive_pub = self.create_publisher(AckermannDriveStamped,
                                                self.drive_topic,
                                                1)
+        self.goal_complete_pub = self.create_publisher(Float32,
+                                                    '/goal_complete',
+                                                    1)
         self.pp_pub = self.create_publisher(Marker, "/pp_marker", 1)
         self.eta_pub = self.create_publisher(Marker, "/eta_marker", 1)
         self.circle_pub = self.create_publisher(Marker, "/circle_marker", 1)
@@ -52,6 +56,9 @@ class PurePursuit(Node):
         self.traj_poses = None
         self.initialized_traj = False
         self.curr_pose = None
+
+        self.goal_reached = False
+        self.last_goal_reached_time = None
 
     def pose_callback(self, odometry_msg):
         pose = odometry_msg.pose.pose  # Extract the Pose from the PoseWithCovarianceStamped message
@@ -125,7 +132,23 @@ class PurePursuit(Node):
             drive_cmd.drive.speed = 0.0
             self.curr_steering_ang = self.curr_steering_ang
 
-        self.drive_pub.publish(drive_cmd)
+        # CHANGE HERE #
+        goal_x = traj_points_x[-1]
+        goal_y = traj_points_y[-1] # this line and the line above idk if it's actually this
+        dist_to_goal = ((x - goal_x)**2 + (y - goal_y)**2)**0.5
+        if dist_to_goal < 1: # if we are 1 m or less away from goal, stop driving for 8 seconds and start going to the next goal
+            if not self.goal_reached:
+                self.goal_reached = True
+                self.last_goal_reached_time = self.get_clock().now()
+                drive_cmd.drive.speed = 0.0
+                self.drive_pub.publish(drive_cmd)
+        elif self.goal_reached and (self.get_clock().now() - self.last_goal_reached_time).seconds >= 8:
+            self.goal_complete_pub.publish(Float32(data=1.0))
+            self.goal_reached = False
+        else:
+            self.drive_pub.publish(drive_cmd)
+
+
 
     def trajectory_callback(self, msg):
         self.get_logger().info(f"Receiving new trajectory {len(msg.poses)} points")
