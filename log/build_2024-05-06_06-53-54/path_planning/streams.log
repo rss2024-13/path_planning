@@ -1,0 +1,21 @@
+[3.024s] Invoking command in '/home/racecar/racecar_ws/src/path_planning/build/path_planning': PYTHONPATH=/home/racecar/racecar_ws/src/path_planning/build/path_planning/prefix_override:/home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py develop --editable --build-directory /home/racecar/racecar_ws/src/path_planning/build/path_planning/build --no-deps install_data
+[3.907s] running develop
+[4.426s] running egg_info
+[4.435s] writing path_planning.egg-info/PKG-INFO
+[4.445s] writing dependency_links to path_planning.egg-info/dependency_links.txt
+[4.452s] writing entry points to path_planning.egg-info/entry_points.txt
+[4.459s] writing requirements to path_planning.egg-info/requires.txt
+[4.468s] writing top-level names to path_planning.egg-info/top_level.txt
+[4.668s] reading manifest file 'path_planning.egg-info/SOURCES.txt'
+[4.757s] writing manifest file 'path_planning.egg-info/SOURCES.txt'
+[4.987s] running build_ext
+[4.995s] Creating /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages/site.py
+[5.031s] Creating /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages/path-planning.egg-link (link to .)
+[5.053s] Installing trajectory_builder script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[5.061s] Installing trajectory_follower script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[5.069s] Installing trajectory_loader script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[5.080s] Installing trajectory_planner script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[5.094s] 
+[5.101s] Installed /home/racecar/racecar_ws/src/path_planning/build/path_planning
+[5.108s] running install_data
+[5.238s] Invoked command in '/home/racecar/racecar_ws/src/path_planning/build/path_planning' returned '0': PYTHONPATH=/home/racecar/racecar_ws/src/path_planning/build/path_planning/prefix_override:/home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py develop --editable --build-directory /home/racecar/racecar_ws/src/path_planning/build/path_planning/build --no-deps install_data

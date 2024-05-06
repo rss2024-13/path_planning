@@ -2,4 +2,9 @@
     <node pkg="path_planning" exec="trajectory_planner" name="trajectory_planner" output="screen">
         <param from="$(find-pkg-share path_planning)/config/sim/sim_config.yaml"/>
     </node>
+    
+    <!-- Launch a map from the maps folder-->
+    <arg name="map2" default="$(find path_planning)/maps/final.yaml"/>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map2)"/>
+
 </launch>

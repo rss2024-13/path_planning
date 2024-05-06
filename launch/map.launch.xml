@@ -1,0 +1,7 @@
+<launch>
+    <arg name="map_yaml" default="$(find-pkg-share path_planning)/maps/final.yaml"/>
+    <node pkg="nav2_map_server" exec="map_server" name="map_server" output="screen">
+        <param name="yaml_filename" value="$(var map_yaml)"/>
+        <remap from="map" to="/map2"/>  <!-- Remapping the map topic -->
+    </node>
+</launch>

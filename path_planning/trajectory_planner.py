@@ -11,6 +11,13 @@ from std_msgs.msg import Float32
 from .utils import LineTrajectory
 import heapq
 
+import matplotlib.pyplot as plt
+
+def visualize_graph(occupancy_grid, file_location):
+    fig, ax = plt.subplots()
+    ax.imshow(occupancy_grid, cmap='gray', origin='lower')
+    plt.savefig(file_location)
+
 
 class PathPlan(Node):
     """ Listens for goal pose published by RViz and uses it to plan a path from
@@ -24,7 +31,7 @@ class PathPlan(Node):
         self.declare_parameter('initial_pose_topic', "default")
 
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
-        self.map_topic = self.get_parameter('map_topic').get_parameter_value().string_value
+        self.map_topic = '/map2' #self.get_parameter('map_topic').get_parameter_value().string_value
         self.initial_pose_topic = self.get_parameter('initial_pose_topic').get_parameter_value().string_value
 
         self.map_sub = self.create_subscription(
@@ -84,22 +91,26 @@ class PathPlan(Node):
         This is called to make the discretized map and graph based on data that comes in.
         '''
         self.map = msg
-        self.kernel_thickness = 20
+        # self.kernel_thickness = 20
         
         data_from_occupancy_grid = np.reshape(msg.data, (msg.info.height, msg.info.width))
+        self.get_logger().info(f"Size of occupancy data is {msg.info.height} x {msg.info.width}")
+        visualize_graph(data_from_occupancy_grid, "data_from_occupancy_grid.png")
         data_from_occupancy_grid[data_from_occupancy_grid == -1] = 100  # Treat unknown as obstacles
-
-        binary_data = np.where(data_from_occupancy_grid > 50, 1, 0).astype(np.uint8) # this makes it easier to do dilate
-
         # Define the structural element for the morphological operations
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_thickness, self.kernel_thickness))
-        thicker_lines_image = cv2.dilate(binary_data, kernel, iterations=1)
+        #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_thickness, self.kernel_thickness))
+        #thicker_lines_image = cv2.dilate(binary_data, kernel, iterations=1)
 
-        end_result = np.where(thicker_lines_image > 0, 100, 0) #undoing the other transformation
+        #end_result = np.where(thicker_lines_image > 0, 100, 0) #undoing the other transformation
+
+        end_result = data_from_occupancy_grid# np.where(data_from_occupancy_grid > 0, 100, 0)
+        visualize_graph(data_from_occupancy_grid, "end_result.png")
 
         self.map_data = end_result
         # self.graph = self.create_graph(self.map_data, True)
         self.get_logger().info('finished making graph')
+
+
         
     def astar(self, start, goal, neighbors, heuristic):
         open_list = [(0, start)]
@@ -155,6 +166,7 @@ class PathPlan(Node):
         self.goal_queue.append(goal)
 
         self.start = start
+        self.get_logger().info(f'Goal queue as of now: {self.goal_queue}')
         self.plan_path_to_next_point()
 
 
@@ -168,11 +180,12 @@ class PathPlan(Node):
         if len(self.goal_queue) > 0:
             start = self.start
             goal = self.goal_queue.pop(0)
-            self.plan_path(start, goal)
+            self.get_logger().info(f'Start point: {start}, goal point: {goal}')
+            self.plan_path_start_goal(start, goal)
 
 
 
-    def plan_path(self, start, goal):
+    def plan_path_start_goal(self, start, goal):
         '''
         # PLAN A PATH HERE #
         path = self.planner.plan(self.map_data, start, goal) 
@@ -188,7 +201,8 @@ class PathPlan(Node):
         if include_diagonals:
             directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
 
-        def neighbors(node):
+        def neighbors(node):  # HERE IS WHERE WE CHANGE TO MAKE THE GRAPH DIRECTED
+            # let's say 20 is you can't go right, 40 is you can't go up, 60 is no down, 80 is no left with a MOE of 5
             neighbors = []
             for direction in directions:
                 x_change, y_change = direction
@@ -201,11 +215,14 @@ class PathPlan(Node):
         if path is not None:
             self.get_logger().info('found path.')
             self.publish_path(path)
+            find_next_path = False
         else:
             self.get_logger().info('path not found')
+            find_next_path = True
         
         self.start = goal # so that we plan from the goal to the next goal instead of start to next goal
-
+        if find_next_path:
+            self.plan_path_to_next_point()
     
 
     # def create_graph(self, image, include_diagonals=False):
@@ -256,10 +273,10 @@ class PathPlan(Node):
         # Convert real-world coordinates to grid coordinates
         # Assuming 'position' is a tuple (x, y) in real-world coordinates
         # We need to know the resolution of the grid (meters/cell) and the origin of the map
-        resolution = self.map.info.resolution
-        origin_x = self.map.info.origin.position.x
-        origin_y = self.map.info.origin.position.y
-        orientation = self.map.info.origin.orientation 
+        resolution = 0.0504 # self.map.info.resolution
+        origin_x = 25.9 # self.map.info.origin.position.x
+        origin_y = 48.5 # self.map.info.origin.position.y
+        orientation = (0,0,1,0) #3.14 # self.map.info.origin.orientation 
 
         real_coords = np.array([position[0], position[1]]) - np.array([origin_x, origin_y])
         real_coords = np.append(real_coords, 0)
@@ -272,7 +289,10 @@ class PathPlan(Node):
         return (int(u), int(v))
     
     def quaternion_to_rotation_matrix(self, quaternion):
-        x, y, z, w = quaternion.x, quaternion.y, quaternion.z, quaternion.w
+        if type(quaternion) == tuple:
+            x, y, z, w = quaternion
+        else:
+            x, y, z, w = quaternion.x, quaternion.y, quaternion.z, quaternion.w
         return np.array([
             [1 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w],
             [2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z, 2*y*z - 2*x*w],

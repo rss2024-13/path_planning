@@ -1,0 +1,25 @@
+[2.406s] Invoking command in '/home/racecar/racecar_ws/src/path_planning': PYTHONPATH=/home/racecar/racecar_ws/src/path_planning/build/path_planning/prefix_override:/home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base build/path_planning build --build-base /home/racecar/racecar_ws/src/path_planning/build/path_planning/build install --record /home/racecar/racecar_ws/src/path_planning/build/path_planning/install.log --install-scripts $base/lib/path_planning --single-version-externally-managed
+[2.793s] running egg_info
+[2.796s] writing build/path_planning/path_planning.egg-info/PKG-INFO
+[2.800s] writing dependency_links to build/path_planning/path_planning.egg-info/dependency_links.txt
+[2.805s] writing entry points to build/path_planning/path_planning.egg-info/entry_points.txt
+[2.808s] writing requirements to build/path_planning/path_planning.egg-info/requires.txt
+[2.811s] writing top-level names to build/path_planning/path_planning.egg-info/top_level.txt
+[2.872s] reading manifest file 'build/path_planning/path_planning.egg-info/SOURCES.txt'
+[2.880s] writing manifest file 'build/path_planning/path_planning.egg-info/SOURCES.txt'
+[2.886s] running build
+[2.889s] running build_py
+[2.892s] running install
+[2.894s] running install_lib
+[2.897s] running install_data
+[2.900s] copying launch/map.launch.xml -> /home/racecar/racecar_ws/src/path_planning/install/path_planning/share/path_planning/launch
+[2.909s] running install_egg_info
+[2.914s] removing '/home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages/path_planning-0.0.0-py3.8.egg-info' (and everything under it)
+[2.924s] Copying build/path_planning/path_planning.egg-info to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages/path_planning-0.0.0-py3.8.egg-info
+[3.022s] running install_scripts
+[3.055s] Installing trajectory_builder script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[3.060s] Installing trajectory_follower script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[3.066s] Installing trajectory_loader script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[3.074s] Installing trajectory_planner script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning
+[3.081s] writing list of installed files to '/home/racecar/racecar_ws/src/path_planning/build/path_planning/install.log'
+[3.117s] Invoked command in '/home/racecar/racecar_ws/src/path_planning' returned '0': PYTHONPATH=/home/racecar/racecar_ws/src/path_planning/build/path_planning/prefix_override:/home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base build/path_planning build --build-base /home/racecar/racecar_ws/src/path_planning/build/path_planning/build install --record /home/racecar/racecar_ws/src/path_planning/build/path_planning/install.log --install-scripts $base/lib/path_planning --single-version-externally-managed

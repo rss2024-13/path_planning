@@ -17,6 +17,8 @@ config/sim/sim_config.yaml
 example_trajectories/trajectory_1.traj
 example_trajectories/trajectory_2.traj
 example_trajectories/trajectory_3.traj
+launch/map.launch.xml
+launch/map_server.launch.py
 launch/debug/build_trajectory.launch.xml
 launch/debug/follow_trajectory.launch.xml
 launch/debug/load_trajectory.launch.xml

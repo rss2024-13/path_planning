@@ -24,7 +24,7 @@ class PurePursuit(Node):
         self.declare_parameter('drive_topic', "default")
 
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
-        self.drive_topic = "/path_planner_drive" # self.get_parameter('drive_topic').get_parameter_value().string_value
+        self.drive_topic =  self.get_parameter('drive_topic').get_parameter_value().string_value # "/path_planner_drive" # self.get_parameter('drive_topic').get_parameter_value().string_value
 
         self.lookahead = 1  # FILL IN #
         self.speed = 1.0  # FILL IN #
@@ -128,26 +128,39 @@ class PurePursuit(Node):
 
                 drive_cmd.drive.speed = self.speed
                 self.curr_steering_ang = drive_cmd.drive.steering_angle
+                #self.get_logger().info(f"Current drive speed {self.speed}, steering angle {self.curr_steering_ang}")
         else:
             drive_cmd.drive.speed = 0.0
             self.curr_steering_ang = self.curr_steering_ang
-
-        # CHANGE HERE #
-        goal_x = traj_points_x[-1]
-        goal_y = traj_points_y[-1] # this line and the line above idk if it's actually this
-        dist_to_goal = ((x - goal_x)**2 + (y - goal_y)**2)**0.5
-        if dist_to_goal < 1: # if we are 1 m or less away from goal, stop driving for 8 seconds and start going to the next goal
-            if not self.goal_reached:
-                self.goal_reached = True
-                self.last_goal_reached_time = self.get_clock().now()
-                drive_cmd.drive.speed = 0.0
-                self.drive_pub.publish(drive_cmd)
-        elif self.goal_reached and (self.get_clock().now() - self.last_goal_reached_time).seconds >= 8:
-            self.goal_complete_pub.publish(Float32(data=1.0))
-            self.goal_reached = False
-        else:
             self.drive_pub.publish(drive_cmd)
 
+        if self.initialized_traj:
+            # CHANGE WAS MADE HERE #
+            goal_x = traj_points_x[-1]
+            goal_y = traj_points_y[-1] # this line and the line above idk if it's actually this
+            dist_to_goal = ((x - goal_x)**2 + (y - goal_y)**2)**0.5
+            if dist_to_goal < 1: # if we are 1 m or less away from goal, stop driving for 8 seconds and start going to the next goal
+                if not self.goal_reached:
+                    self.get_logger().info("Within 1m of goal, waiting then going to next location")
+                    self.goal_reached = True
+                    self.last_goal_reached_time = self.get_clock().now()
+                    drive_cmd.drive.speed = 0.0
+                    self.get_logger().info(f"Set last goal reached time to {self.last_goal_reached_time}")
+                    self.drive_pub.publish(drive_cmd)
+                
+                elapsed_time = (self.get_clock().now() - self.last_goal_reached_time).to_msg().sec
+                self.get_logger().info(f"Current status: goal reached = {self.goal_reached}, time elapsed so far = {elapsed_time}")
+
+                
+                if self.goal_reached and elapsed_time >= 8:
+                    self.get_logger().info("Has been 8 seconds, updating goal")
+                    self.goal_complete_pub.publish(Float32(data=1.0))
+                    self.goal_reached = False
+            
+
+            else:
+                self.drive_pub.publish(drive_cmd)
+                
 
 
     def trajectory_callback(self, msg):

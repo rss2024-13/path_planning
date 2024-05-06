@@ -1,0 +1,82 @@
+[0.000000] (-) TimerEvent: {}
+[0.002131] (path_planning) JobQueued: {'identifier': 'path_planning', 'dependencies': OrderedDict()}
+[0.004273] (path_planning) JobStarted: {'identifier': 'path_planning'}
+[0.096985] (-) TimerEvent: {}
+[0.199001] (-) TimerEvent: {}
+[0.301616] (-) TimerEvent: {}
+[0.418131] (-) TimerEvent: {}
+[0.519654] (-) TimerEvent: {}
+[0.621030] (-) TimerEvent: {}
+[0.722190] (-) TimerEvent: {}
+[0.858252] (-) TimerEvent: {}
+[0.960446] (-) TimerEvent: {}
+[1.062150] (-) TimerEvent: {}
+[1.163270] (-) TimerEvent: {}
+[1.264955] (-) TimerEvent: {}
+[1.365944] (-) TimerEvent: {}
+[1.467664] (-) TimerEvent: {}
+[1.578390] (-) TimerEvent: {}
+[1.681612] (-) TimerEvent: {}
+[1.783050] (-) TimerEvent: {}
+[1.884665] (-) TimerEvent: {}
+[1.986363] (-) TimerEvent: {}
+[2.088410] (-) TimerEvent: {}
+[2.190200] (-) TimerEvent: {}
+[2.291938] (-) TimerEvent: {}
+[2.393572] (-) TimerEvent: {}
+[2.495074] (-) TimerEvent: {}
+[2.596979] (-) TimerEvent: {}
+[2.698717] (-) TimerEvent: {}
+[2.800767] (-) TimerEvent: {}
+[2.902140] (-) TimerEvent: {}
+[3.000220] (path_planning) Command: {'cmd': ['/usr/bin/python3', 'setup.py', 'develop', '--editable', '--build-directory', '/home/racecar/racecar_ws/src/path_planning/build/path_planning/build', '--no-deps', 'install_data'], 'cwd': '/home/racecar/racecar_ws/src/path_planning/build/path_planning', 'env': {'PYTHONIOENCODING': 'utf-8', 'HOSTNAME': '58fd43e968c6', 'ROS_PACKAGE_PATH': '/home/racecar/racecar_ws/install/final_racecar_simulator/share', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/home/racecar/racecar_ws/install/vs_msgs/lib:/home/racecar/racecar_ws/install/custom_msgs/lib:/opt/ros/foxy/opt/yaml_cpp_vendor/lib:/opt/ros/foxy/opt/rviz_ogre_vendor/lib:/opt/ros/foxy/lib/x86_64-linux-gnu:/opt/ros/foxy/lib', 'HOME': '/home/racecar', 'OLDPWD': '/home/racecar/racecar_ws/src', 'ROS_PYTHON_VERSION': '3', 'COLCON_PREFIX_PATH': '/home/sim_ws/install:/home/racecar/racecar_ws/install', 'ROS_DISTRO': 'foxy', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/home/racecar/racecar_ws/install/final_racecar_simulator/lib/x86_64-linux-gnu/pkgconfig:/home/racecar/racecar_ws/install/final_racecar_simulator/lib/pkgconfig', 'TERM': 'xterm', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/foxy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'en_US.UTF-8', 'AMENT_PREFIX_PATH': '/home/sim_ws/install/racecar_simulator:/home/racecar/racecar_ws/install/wall_follower:/home/racecar/racecar_ws/install/visual_servoing:/home/racecar/racecar_ws/install/ros_exercises:/home/racecar/racecar_ws/install/path_planning:/home/racecar/racecar_ws/install/localization:/opt/ros/foxy', 'SIM_WS': '/home/sim_ws', 'PWD': '/home/racecar/racecar_ws/src/path_planning/build/path_planning', 'PYTHONPATH': '/home/racecar/racecar_ws/src/path_planning/build/path_planning/prefix_override:/home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages:/home/racecar/racecar_ws/build/wall_follower:/home/racecar/racecar_ws/install/wall_follower/lib/python3.8/site-packages:/home/racecar/racecar_ws/install/vs_msgs/lib/python3.8/site-packages:/home/racecar/racecar_ws/build/visual_servoing:/home/racecar/racecar_ws/install/visual_servoing/lib/python3.8/site-packages:/home/racecar/racecar_ws/build/ros_exercises:/home/racecar/racecar_ws/install/ros_exercises/lib/python3.8/site-packages:/home/racecar/racecar_ws/build/path_planning:/home/racecar/racecar_ws/install/path_planning/lib/python3.8/site-packages:/home/racecar/racecar_ws/build/localization:/home/racecar/racecar_ws/install/localization/lib/python3.8/site-packages:/home/racecar/racecar_ws/install/custom_msgs/lib/python3.8/site-packages:/opt/ros/foxy/lib/python3.8/site-packages', 'NO_VNC_VERSION': '1.4.0', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/home/sim_ws/install/racecar_simulator:/home/racecar/racecar_ws/install/vs_msgs:/home/racecar/racecar_ws/install/custom_msgs'}, 'shell': False}
+[3.031916] (-) TimerEvent: {}
+[3.133428] (-) TimerEvent: {}
+[3.246589] (-) TimerEvent: {}
+[3.349710] (-) TimerEvent: {}
+[3.453158] (-) TimerEvent: {}
+[3.557280] (-) TimerEvent: {}
+[3.660035] (-) TimerEvent: {}
+[3.762458] (-) TimerEvent: {}
+[3.882869] (-) TimerEvent: {}
+[3.907844] (path_planning) StdoutLine: {'line': b'running develop\n'}
+[3.983130] (-) TimerEvent: {}
+[4.085144] (-) TimerEvent: {}
+[4.188789] (-) TimerEvent: {}
+[4.291457] (-) TimerEvent: {}
+[4.394344] (-) TimerEvent: {}
+[4.427985] (path_planning) StdoutLine: {'line': b'running egg_info\n'}
+[4.435383] (path_planning) StdoutLine: {'line': b'writing path_planning.egg-info/PKG-INFO\n'}
+[4.442643] (path_planning) StdoutLine: {'line': b'writing dependency_links to path_planning.egg-info/dependency_links.txt\n'}
+[4.453299] (path_planning) StdoutLine: {'line': b'writing entry points to path_planning.egg-info/entry_points.txt\n'}
+[4.460509] (path_planning) StdoutLine: {'line': b'writing requirements to path_planning.egg-info/requires.txt\n'}
+[4.469677] (path_planning) StdoutLine: {'line': b'writing top-level names to path_planning.egg-info/top_level.txt\n'}
+[4.494756] (-) TimerEvent: {}
+[4.597821] (-) TimerEvent: {}
+[4.670271] (path_planning) StdoutLine: {'line': b"reading manifest file 'path_planning.egg-info/SOURCES.txt'\n"}
+[4.697940] (-) TimerEvent: {}
+[4.759340] (path_planning) StdoutLine: {'line': b"writing manifest file 'path_planning.egg-info/SOURCES.txt'\n"}
+[4.798742] (-) TimerEvent: {}
+[4.900699] (-) TimerEvent: {}
+[4.989040] (path_planning) StdoutLine: {'line': b'running build_ext\n'}
+[4.994580] (path_planning) StdoutLine: {'line': b'Creating /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages/site.py\n'}
+[5.001651] (-) TimerEvent: {}
+[5.032770] (path_planning) StdoutLine: {'line': b'Creating /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/python3.8/site-packages/path-planning.egg-link (link to .)\n'}
+[5.054597] (path_planning) StdoutLine: {'line': b'Installing trajectory_builder script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning\n'}
+[5.062210] (path_planning) StdoutLine: {'line': b'Installing trajectory_follower script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning\n'}
+[5.071427] (path_planning) StdoutLine: {'line': b'Installing trajectory_loader script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning\n'}
+[5.081108] (path_planning) StdoutLine: {'line': b'Installing trajectory_planner script to /home/racecar/racecar_ws/src/path_planning/install/path_planning/lib/path_planning\n'}
+[5.095190] (path_planning) StdoutLine: {'line': b'\n'}
+[5.100525] (path_planning) StdoutLine: {'line': b'Installed /home/racecar/racecar_ws/src/path_planning/build/path_planning\n'}
+[5.107422] (-) TimerEvent: {}
+[5.108841] (path_planning) StdoutLine: {'line': b'running install_data\n'}
+[5.207715] (-) TimerEvent: {}
+[5.238731] (path_planning) CommandEnded: {'returncode': 0}
+[5.311748] (-) TimerEvent: {}
+[5.419364] (-) TimerEvent: {}
+[5.529674] (-) TimerEvent: {}
+[5.631565] (-) TimerEvent: {}
+[5.733744] (-) TimerEvent: {}
+[5.835282] (-) TimerEvent: {}
+[5.871897] (path_planning) JobEnded: {'identifier': 'path_planning', 'rc': 0}
+[5.885096] (-) EventReactorShutdown: {}

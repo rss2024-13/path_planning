@@ -13,6 +13,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/ament_index/resource_index/packages',
          ['resource/' + package_name]),
+        ('share/' + package_name + '/launch', glob.glob('launch/*.launch.*')),  # New line for map launch
         ('share/path_planning/launch/sim', glob.glob(os.path.join('launch', 'sim', '*launch.*'))),
         ('share/path_planning/launch/real', glob.glob(os.path.join('launch', 'real', '*launch.*'))),
         ('share/path_planning/launch/debug', glob.glob(os.path.join('launch', 'debug', '*launch.*'))),
