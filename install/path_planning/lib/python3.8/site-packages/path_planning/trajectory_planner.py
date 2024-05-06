@@ -91,7 +91,7 @@ class PathPlan(Node):
         This is called to make the discretized map and graph based on data that comes in.
         '''
         self.map = msg
-        self.kernel_thickness = 20
+        # self.kernel_thickness = 20
         
         data_from_occupancy_grid = np.reshape(msg.data, (msg.info.height, msg.info.width))
         self.get_logger().info(f"Size of occupancy data is {msg.info.height} x {msg.info.width}")
@@ -103,7 +103,7 @@ class PathPlan(Node):
 
         #end_result = np.where(thicker_lines_image > 0, 100, 0) #undoing the other transformation
 
-        end_result = np.where(data_from_occupancy_grid > 0, 100, 0)
+        end_result = data_from_occupancy_grid# np.where(data_from_occupancy_grid > 0, 100, 0)
         visualize_graph(data_from_occupancy_grid, "end_result.png")
 
         self.map_data = end_result
@@ -201,7 +201,8 @@ class PathPlan(Node):
         if include_diagonals:
             directions.extend([(-1, -1), (-1, 1), (1, -1), (1, 1)])  # Diagonals
 
-        def neighbors(node):
+        def neighbors(node):  # HERE IS WHERE WE CHANGE TO MAKE THE GRAPH DIRECTED
+            # let's say 20 is you can't go right, 40 is you can't go up, 60 is no down, 80 is no left with a MOE of 5
             neighbors = []
             for direction in directions:
                 x_change, y_change = direction

@@ -54,11 +54,14 @@ for i in range(7):
 
     # Drawing the trajectory onto the map
     map_image = cv2.imread('path_on_map.png')
-    for i in range(len(trajectory)-1):
-        start_point = world_to_pixel(trajectory[i])
-        end_point = world_to_pixel(trajectory[i+1])
+    for j in range(len(trajectory)-1):
+        start_point = world_to_pixel(trajectory[j])
+        end_point = world_to_pixel(trajectory[j+1])
         print(start_point, end_point)
-        cv2.line(map_image, start_point, end_point, color=(0,0,0), thickness=5)
+        if i < 3:
+            cv2.line(map_image, start_point, end_point, color=(0,0,0), thickness=12)
+        else:
+            cv2.line(map_image, start_point, end_point, color=(0,0,0), thickness=5)
         # map_array[int(y), int(x)] = 0  # Set trajectory pixels to black (obstacles)
 
     cv2.imwrite('path_on_map.png', map_image)
