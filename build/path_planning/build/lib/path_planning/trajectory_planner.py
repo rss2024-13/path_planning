@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
-import cv2
 # import networkx as nx
 
 assert rclpy
@@ -12,11 +11,8 @@ from .utils import LineTrajectory
 import heapq
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
-def visualize_graph(occupancy_grid, file_location):
-    fig, ax = plt.subplots()
-    ax.imshow(occupancy_grid, cmap='gray', origin='lower')
-    plt.savefig(file_location)
 
 
 class PathPlan(Node):
@@ -84,6 +80,8 @@ class PathPlan(Node):
         self.start = None
         self.goal_queue = []
 
+        self.map_cb(None)
+
 
 
     def map_cb(self, msg):
@@ -91,25 +89,57 @@ class PathPlan(Node):
         This is called to make the discretized map and graph based on data that comes in.
         '''
         self.map = msg
+        # self.map = Image.open('updated_path_on_map.png') # load image instead of using map2
+        self.map = np.loadtxt('occupancy_grid.txt')
         # self.kernel_thickness = 20
+
+        for i, data in enumerate(msg.data):
+            if data != 0 and data != 100 and data != -1:
+                pass # self.get_logger().info(f"got interesting data, value = {data}, index = {i}")
         
         data_from_occupancy_grid = np.reshape(msg.data, (msg.info.height, msg.info.width))
         self.get_logger().info(f"Size of occupancy data is {msg.info.height} x {msg.info.width}")
-        visualize_graph(data_from_occupancy_grid, "data_from_occupancy_grid.png")
-        data_from_occupancy_grid[data_from_occupancy_grid == -1] = 100  # Treat unknown as obstacles
+        self.visualize_graph(data_from_occupancy_grid, "data_from_occupancy_grid.png")
+
+
+
+        end_result = np.where(data_from_occupancy_grid > 0, 100, data_from_occupancy_grid)
+        end_result[end_result == -1] = 50  # Treat unknown as obstacles
         # Define the structural element for the morphological operations
         #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_thickness, self.kernel_thickness))
         #thicker_lines_image = cv2.dilate(binary_data, kernel, iterations=1)
 
         #end_result = np.where(thicker_lines_image > 0, 100, 0) #undoing the other transformation
-
-        end_result = data_from_occupancy_grid# np.where(data_from_occupancy_grid > 0, 100, 0)
-        visualize_graph(data_from_occupancy_grid, "end_result.png")
-
+        if (data_from_occupancy_grid == end_result).all():
+            self.get_logger().info("We did not clip any values")
+        else:
+            self.get_logger().info("We clipped some values")
+        
+        self.visualize_graph(end_result, "end_result.png")
         self.map_data = end_result
         # self.graph = self.create_graph(self.map_data, True)
         self.get_logger().info('finished making graph')
 
+
+
+    def visualize_graph(self, occupancy_grid, file_location):
+        self.get_logger().info(f'making graph saved at {file_location}')
+
+        # Define a custom colormap:
+        # -1 mapped to gray (128/255 for mid-gray in RGB)
+        # 0 mapped to white (1.0, 1.0, 1.0 in RGB)
+        # 100 mapped to black (0.0, 0.0, 0.0 in RGB)
+        colors = [(1.0, 1.0, 1.0), (0.5, 0.5, 0.5), (0.0, 0.0, 0.0)]  # R -> G -> B
+        nodes = [0.0, 0.495, 1.0]  # Position of each color in the colormap
+        cmap = LinearSegmentedColormap.from_list("custom_gray", list(zip(nodes, colors)))
+
+        fig, ax = plt.subplots()
+        # Normalize data to ensure the correct mapping:
+        # Set the range of your data as the input range to the colormap
+        norm = plt.Normalize(vmin=-1, vmax=100)
+        ax.imshow(occupancy_grid, cmap=cmap, norm=norm, origin='lower')
+        
+        plt.savefig(file_location)
 
         
     def astar(self, start, goal, neighbors, heuristic):
@@ -131,7 +161,11 @@ class PathPlan(Node):
                 return path
 
             for neighbor in neighbors(current):
-                tentative_g_score = g_score[current] + 1
+                if neighbor[0] != current[0] and neighbor[1] != current[1]: # if we travel diagonal, dist = sqrt2
+                    dist = np.sqrt(2)
+                else:
+                    dist = 1
+                tentative_g_score = g_score[current] + dist
                 if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
                     came_from[neighbor] = current
                     g_score[neighbor] = tentative_g_score
